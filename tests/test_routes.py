@@ -57,13 +57,13 @@ def _fake_payment_orm(status=Status.SUCCEEDED):
 
 
 def test_start_payment_without_idempotency_key_returns_400(client):
-    resp = client.post(f"/payments/{uuid.uuid4()}")
+    resp = client.post(f"/carts/{uuid.uuid4()}/payments")
     assert resp.status_code == 400
 
 
 def test_start_payment_success_returns_201(client, monkeypatch):
     _stub_start_payment(monkeypatch, return_value=_fake_payment_orm())
-    resp = client.post(f"/payments/{uuid.uuid4()}", headers={"Idempotency-Key": "key-1"})
+    resp = client.post(f"/carts/{uuid.uuid4()}/payments", headers={"Idempotency-Key": "key-1"})
     assert resp.status_code == 201
     assert resp.get_json()["status"] == "succeeded"
 
@@ -82,7 +82,7 @@ def test_start_payment_success_returns_201(client, monkeypatch):
 )
 def test_start_payment_maps_service_errors_to_http_status(client, monkeypatch, exception, expected_status):
     _stub_start_payment(monkeypatch, side_effect=exception)
-    resp = client.post(f"/payments/{uuid.uuid4()}", headers={"Idempotency-Key": "key-1"})
+    resp = client.post(f"/carts/{uuid.uuid4()}/payments", headers={"Idempotency-Key": "key-1"})
     assert resp.status_code == expected_status
     body = resp.get_json()
     assert body["error"] == str(exception)
@@ -105,13 +105,13 @@ class _FakeDb:
 def test_get_payment_not_found_returns_404(client, monkeypatch):
     from src.routes import main as main_module
     monkeypatch.setattr(main_module, "db", _FakeDb(None))
-    resp = client.get(f"/payments/{uuid.uuid4()}")
+    resp = client.get(f"/carts/{uuid.uuid4()}/payments")
     assert resp.status_code == 404
 
 
 def test_get_payment_found_returns_200(client, monkeypatch):
     from src.routes import main as main_module
     monkeypatch.setattr(main_module, "db", _FakeDb(_fake_payment_orm(status=Status.PENDING)))
-    resp = client.get(f"/payments/{uuid.uuid4()}")
+    resp = client.get(f"/carts/{uuid.uuid4()}/payments")
     assert resp.status_code == 200
     assert resp.get_json()["status"] == "pending"
