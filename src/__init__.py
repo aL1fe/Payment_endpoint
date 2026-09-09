@@ -1,4 +1,5 @@
-from flask import Flask
+from flask import Flask, jsonify
+from werkzeug.exceptions import HTTPException
 from src.extensions import db, migrate
 
 from src.config import settings
@@ -17,5 +18,11 @@ def create_app():
     app.register_blueprint(main_bp)
 
     import src.models  # noqa
+
+    @app.errorhandler(HTTPException)
+    def handle_http_exception(exc: HTTPException):
+        response = jsonify({"error": exc.description, "status": exc.code})
+        response.status_code = exc.code
+        return response
 
     return app
