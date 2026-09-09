@@ -38,7 +38,7 @@ def get_payment(payment_id):
     return jsonify(_serialize_payment(payment))
 
 
-@main_bp.route("/carts/<uuid:cart_id>/payments", methods=["POST"])
+@main_bp.route("/payments/<uuid:cart_id>", methods=["POST"])
 def start_payment(cart_id):
     try:
         payment_orm = PaymentService().start_payment(cart_id)
@@ -49,4 +49,3 @@ def start_payment(cart_id):
 
     payment = Payment.from_orm(payment_orm)
     return jsonify(_serialize_payment(payment)), 201
-

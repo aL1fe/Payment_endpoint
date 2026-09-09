@@ -11,11 +11,13 @@ from src.services.payment_calculator import calculate_cart_total
 
 
 class CartNotFoundError(Exception):
-    pass
+    def __init__(self, message="Cart not found"):
+        super().__init__(message)
 
 
 class PaymentMethodNotFoundError(Exception):
-    pass
+    def __init__(self, message="Payment method not found"):
+        super().__init__(message)
 
 
 class PaymentService:
