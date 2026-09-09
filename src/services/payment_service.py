@@ -7,7 +7,7 @@ from src.models.payment import PaymentORM
 from src.repositories.payment_repository import PaymentRepository
 from src.repositories.cart_repository import CartRepository
 from src.repositories.user_payment_method_repository import UserPaymentMethodRepository
-from src.services.payment_provider import PaymentProvider
+from src.services.payment_provider import PaymentGateway, PaymentProvider
 from src.services.payment_calculator import calculate_cart_total
 from src.services.payment_exceptions import (
     CartNotFoundError,
@@ -27,7 +27,7 @@ class PaymentService:
         payment_repository: PaymentRepository | None = None,
         cart_repository: CartRepository | None = None,
         payment_method_repository: UserPaymentMethodRepository | None = None,
-        payment_provider: PaymentProvider | None = None,
+        payment_provider: PaymentGateway | None = None,
         max_charge_attempts: int = 3,
         retry_backoff_seconds: float = 0.2,
     ):

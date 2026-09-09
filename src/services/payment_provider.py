@@ -1,5 +1,6 @@
 import random
 import uuid
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from decimal import Decimal
 
@@ -10,7 +11,16 @@ class ChargeResult:
     provider_reference: str
 
 
-class PaymentProvider:
+class PaymentGateway(ABC):
+    """Contract any payment provider integration must follow. Swapping the
+    provider later means writing a new class here, nothing else has to change."""
+
+    @abstractmethod
+    def charge(self, provider_token: str, amount: Decimal) -> ChargeResult:
+        ...
+
+
+class PaymentProvider(PaymentGateway):
     """Mock of the external payment provider. Charges are simulated locally,
     no real card token or amount is sent anywhere."""
 
