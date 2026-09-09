@@ -3,8 +3,8 @@ from src.extensions import db
 
 from src.models.payment import PaymentORM
 from src.schemas.payment import Payment
-from src.services.payment_service import (
-    PaymentService,
+from src.services.payment_service import PaymentService
+from src.services.payment_exceptions import (
     CartNotFoundError,
     CartNotActiveError,
     PaymentMethodNotFoundError,
