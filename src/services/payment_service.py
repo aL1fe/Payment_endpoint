@@ -1,4 +1,5 @@
 import uuid
+import time
 
 from src.extensions import db
 from src.enums.status import Status
@@ -49,11 +50,28 @@ class PaymentService:
         cart_repository: CartRepository | None = None,
         payment_method_repository: UserPaymentMethodRepository | None = None,
         payment_provider: PaymentProvider | None = None,
+        max_charge_attempts: int = 3,
+        retry_backoff_seconds: float = 0.2,
     ):
         self._payments = payment_repository or PaymentRepository()
         self._carts = cart_repository or CartRepository()
         self._payment_methods = payment_method_repository or UserPaymentMethodRepository()
         self._payment_provider = payment_provider or PaymentProvider()
+        self._max_charge_attempts = max_charge_attempts
+        self._retry_backoff_seconds = retry_backoff_seconds
+
+    def _charge_with_retry(self, provider_token: str, amount):
+        """Retries only on transient errors (exceptions). A declined charge
+        (result.success == False) is a definitive answer and is not retried."""
+        last_error: Exception | None = None
+        for attempt in range(1, self._max_charge_attempts + 1):
+            try:
+                return self._payment_provider.charge(provider_token, amount)
+            except Exception as exc:
+                last_error = exc
+                if attempt < self._max_charge_attempts:
+                    time.sleep(self._retry_backoff_seconds * attempt)
+        raise last_error
 
     def start_payment(self, cart_id: uuid.UUID, idempotency_key: str) -> PaymentORM:
         existing_payment = self._payments.get_by_idempotency_key(idempotency_key)
@@ -93,7 +111,7 @@ class PaymentService:
         db.session.flush()
 
         try:
-            result = self._payment_provider.charge(payment_method.provider_token, amount)
+            result = self._charge_with_retry(payment_method.provider_token, amount)
         except Exception as exc:
             payment.status = Status.FAILED
             db.session.commit()
