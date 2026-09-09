@@ -6,6 +6,7 @@ from src.schemas.payment import Payment
 from src.services.payment_service import (
     PaymentService,
     CartNotFoundError,
+    CartNotActiveError,
     PaymentMethodNotFoundError,
     IdempotencyKeyConflictError,
 )
@@ -49,6 +50,8 @@ def start_payment(cart_id):
         payment_orm = PaymentService().start_payment(cart_id, idempotency_key)
     except CartNotFoundError as exc:
         abort(404, description=str(exc))
+    except CartNotActiveError as exc:
+        abort(409, description=str(exc))
     except PaymentMethodNotFoundError as exc:
         abort(422, description=str(exc))
     except IdempotencyKeyConflictError as exc:

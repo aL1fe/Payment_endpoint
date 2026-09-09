@@ -25,6 +25,11 @@ class IdempotencyKeyConflictError(Exception):
         super().__init__(message)
 
 
+class CartNotActiveError(Exception):
+    def __init__(self, message="Cart is not active"):
+        super().__init__(message)
+
+
 class PaymentService:
     """Business logic for starting a payment for a cart."""
 
@@ -53,6 +58,8 @@ class PaymentService:
         cart = self._carts.get_by_id(cart_id)
         if cart is None:
             raise CartNotFoundError(f"Cart {cart_id} not found")
+        if cart.status != "active":
+            raise CartNotActiveError(f"Cart {cart_id} is {cart.status}, not active")
 
         payment_method = self._payment_methods.get_default_for_user(cart.user_id)
         if payment_method is None:
