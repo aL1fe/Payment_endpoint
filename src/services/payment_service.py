@@ -55,7 +55,7 @@ class PaymentService:
             # Same key + same cart: return the original result instead of charging again.
             return existing_payment
 
-        cart = self._carts.get_by_id(cart_id)
+        cart = self._carts.get_by_id(cart_id, for_update=True)
         if cart is None:
             raise CartNotFoundError(f"Cart {cart_id} not found")
         if cart.status != "active":
