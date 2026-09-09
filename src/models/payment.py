@@ -16,7 +16,6 @@ class PaymentORM(db.Model):
     amount = db.Column(db.Numeric(precision=12, scale=2), nullable=False)
     status = db.Column(db.Enum(Status, name="payment_status"), nullable=False, default=Status.PENDING)
     provider_token = db.Column(db.String(64), nullable=False)
-    # ID of the charge transaction returned by the payment provider; unknown until charge() responds.
     provider_reference = db.Column(db.String(64), nullable=True)
     idempotency_key = db.Column(db.String(64), unique=True, nullable=False)
     created_at = db.Column(
