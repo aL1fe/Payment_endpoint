@@ -12,6 +12,7 @@ from src.services.payment_exceptions import (
     CartNotFoundError,
     EmptyCartError,
     IdempotencyKeyConflictError,
+    InvalidPaymentAmountError,
     PaymentMethodNotFoundError,
     PaymentProviderError,
 )
@@ -74,6 +75,7 @@ def test_start_payment_success_returns_201(client, monkeypatch):
         (CartNotActiveError("not active"), 409),
         (PaymentMethodNotFoundError("no method"), 422),
         (EmptyCartError("empty"), 422),
+        (InvalidPaymentAmountError("zero total"), 422),
         (IdempotencyKeyConflictError("conflict"), 409),
         (PaymentProviderError("provider down"), 502),
     ],

@@ -11,6 +11,7 @@ from src.services.payment_exceptions import (
     CartNotFoundError,
     EmptyCartError,
     IdempotencyKeyConflictError,
+    InvalidPaymentAmountError,
     PaymentMethodNotFoundError,
     PaymentProviderError,
 )
@@ -86,6 +87,23 @@ def test_raises_when_no_default_payment_method(app_context):
     service = build_service(cart=cart, items=make_items(), method=None)
     with pytest.raises(PaymentMethodNotFoundError):
         service.start_payment(cart.id, "key-1")
+
+
+def test_raises_when_cart_total_is_zero(app_context):
+    cart = make_cart()
+    free_items = [
+        CartItemORM(
+            id=uuid.uuid4(), cart_id=CART_ID, product_id=uuid.uuid4(),
+            quantity=1, unit_price=Decimal("0.00"),
+        ),
+    ]
+    provider = ScriptedPaymentProvider([ChargeResult(success=True, provider_reference="ref_123")])
+    service = build_service(cart=cart, items=free_items, method=make_payment_method(), provider=provider)
+
+    with pytest.raises(InvalidPaymentAmountError):
+        service.start_payment(cart.id, "key-1")
+    assert provider.calls == 0
+    assert cart.status == "active"
 
 
 def test_successful_charge_marks_payment_succeeded_and_cart_checked_out(app_context):

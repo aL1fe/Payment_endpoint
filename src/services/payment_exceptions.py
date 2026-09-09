@@ -26,3 +26,8 @@ class PaymentProviderError(Exception):
 class EmptyCartError(Exception):
     def __init__(self, message="Cart has no items"):
         super().__init__(message)
+
+
+class InvalidPaymentAmountError(Exception):
+    def __init__(self, message="Cart total must be greater than zero"):
+        super().__init__(message)

@@ -12,6 +12,7 @@ from src.services.payment_exceptions import (
     IdempotencyKeyConflictError,
     PaymentProviderError,
     EmptyCartError,
+    InvalidPaymentAmountError,
 )
 
 
@@ -63,6 +64,9 @@ def start_payment(cart_id):
         logger.warning("start_payment failed for cart %s: %s", cart_id, exc)
         abort(422, description=str(exc))
     except EmptyCartError as exc:
+        logger.warning("start_payment failed for cart %s: %s", cart_id, exc)
+        abort(422, description=str(exc))
+    except InvalidPaymentAmountError as exc:
         logger.warning("start_payment failed for cart %s: %s", cart_id, exc)
         abort(422, description=str(exc))
     except IdempotencyKeyConflictError as exc:

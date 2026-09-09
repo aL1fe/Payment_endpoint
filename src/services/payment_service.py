@@ -17,6 +17,7 @@ from src.services.payment_exceptions import (
     CartNotActiveError,
     PaymentProviderError,
     EmptyCartError,
+    InvalidPaymentAmountError,
 )
 
 logger = logging.getLogger(__name__)
@@ -86,7 +87,11 @@ class PaymentService:
         if not cart_items:
             logger.warning("Cart %s has no items", cart_id)
             raise EmptyCartError(f"Cart {cart_id} has no items")
+
         amount = calculate_cart_total(cart_items)
+        if amount <= 0:
+            logger.warning("Cart %s total is %s, nothing to charge", cart_id, amount)
+            raise InvalidPaymentAmountError(f"Cart {cart_id} total is {amount}, nothing to charge")
 
         payment = self._payments.create(
             PaymentORM(
