@@ -16,9 +16,11 @@ Create a `.env` file using `.env.example` as a template:
 Example `.env` file:
 
 ```dotenv
-POSTGRES_DB=payment_service
-POSTGRES_USER=your_username
-POSTGRES_PASSWORD=your_password
+DB_USER=your_username
+DB_PASS=your_password
+DB_HOST=127.0.0.1
+DB_PORT=5444
+DB_NAME=payment_service
 ```
 
 ### 3. Initialize the Database
