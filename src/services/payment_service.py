@@ -24,17 +24,17 @@ class PaymentService:
 
     def __init__(
         self,
-        payment_repository: PaymentRepository | None = None,
-        cart_repository: CartRepository | None = None,
-        payment_method_repository: UserPaymentMethodRepository | None = None,
-        payment_provider: PaymentGateway | None = None,
+        payment_repository: PaymentRepository,
+        cart_repository: CartRepository,
+        payment_method_repository: UserPaymentMethodRepository,
+        payment_provider: PaymentGateway,
         max_charge_attempts: int = 3,
         retry_backoff_seconds: float = 0.2,
     ):
-        self._payments = payment_repository or PaymentRepository()
-        self._carts = cart_repository or CartRepository()
-        self._payment_methods = payment_method_repository or UserPaymentMethodRepository()
-        self._payment_provider = payment_provider or PaymentProvider()
+        self._payments = payment_repository
+        self._carts = cart_repository
+        self._payment_methods = payment_method_repository
+        self._payment_provider = payment_provider
         self._max_charge_attempts = max_charge_attempts
         self._retry_backoff_seconds = retry_backoff_seconds
 
@@ -102,3 +102,13 @@ class PaymentService:
 
         db.session.commit()
         return payment
+
+
+def create_payment_service() -> PaymentService:
+    """Composition root: wires PaymentService with its real (non-test) dependencies."""
+    return PaymentService(
+        payment_repository=PaymentRepository(),
+        cart_repository=CartRepository(),
+        payment_method_repository=UserPaymentMethodRepository(),
+        payment_provider=PaymentProvider(),
+    )

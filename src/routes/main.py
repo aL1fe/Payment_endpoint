@@ -3,7 +3,7 @@ from src.extensions import db
 
 from src.models.payment import PaymentORM
 from src.schemas.payment import Payment
-from src.services.payment_service import PaymentService
+from src.services.payment_service import create_payment_service
 from src.services.payment_exceptions import (
     CartNotFoundError,
     CartNotActiveError,
@@ -49,7 +49,7 @@ def start_payment(cart_id):
         abort(400, description="Idempotency-Key header is required")
 
     try:
-        payment_orm = PaymentService().start_payment(cart_id, idempotency_key)
+        payment_orm = create_payment_service().start_payment(cart_id, idempotency_key)
     except CartNotFoundError as exc:
         abort(404, description=str(exc))
     except CartNotActiveError as exc:
