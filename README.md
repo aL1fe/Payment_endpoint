@@ -28,6 +28,18 @@ Start the services using Docker Compose:
 docker compose up -d
 ```
 
+Load the base schema (tables owned by other parts of the system, plus sample data). This project does not manage these tables with Alembic, so they must be created once, directly with `psql`:
+
+```bash
+psql "postgresql://your_username:your_password@127.0.0.1:5444/payment_service" -f migrations/base_schema.sql
+```
+
+Then create the `payments` table with Alembic:
+
+```bash
+flask db upgrade
+```
+
 ### 4. Set Up Virtual Environment and Install Dependencies
 Run the setup script to configure the virtual environment and install all required dependencies:
 
