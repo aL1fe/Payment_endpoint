@@ -9,6 +9,7 @@ from src.services.payment_service import (
     CartNotActiveError,
     PaymentMethodNotFoundError,
     IdempotencyKeyConflictError,
+    PaymentProviderError,
 )
 
 
@@ -56,6 +57,8 @@ def start_payment(cart_id):
         abort(422, description=str(exc))
     except IdempotencyKeyConflictError as exc:
         abort(409, description=str(exc))
+    except PaymentProviderError as exc:
+        abort(502, description=str(exc))
 
     payment = Payment.from_orm(payment_orm)
     return jsonify(_serialize_payment(payment)), 201

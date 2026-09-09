@@ -30,6 +30,11 @@ class CartNotActiveError(Exception):
         super().__init__(message)
 
 
+class PaymentProviderError(Exception):
+    def __init__(self, message="Payment provider call failed"):
+        super().__init__(message)
+
+
 class PaymentService:
     """Business logic for starting a payment for a cart."""
 
@@ -80,7 +85,13 @@ class PaymentService:
         )
         db.session.flush()
 
-        result = self._payment_provider.charge(payment_method.provider_token, amount)
+        try:
+            result = self._payment_provider.charge(payment_method.provider_token, amount)
+        except Exception as exc:
+            payment.status = Status.FAILED
+            db.session.commit()
+            raise PaymentProviderError(f"Payment provider call failed: {exc}") from exc
+
         payment.status = Status.SUCCEEDED if result.success else Status.FAILED
         payment.provider_reference = result.provider_reference
         if result.success:
