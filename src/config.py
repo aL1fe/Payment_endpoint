@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     DB_PORT: int = 5432
     DB_NAME: str
 
+    LOG_LEVEL: str = "INFO"
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     @property

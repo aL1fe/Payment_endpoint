@@ -1,3 +1,4 @@
+import logging
 from flask import Blueprint, jsonify, abort, request
 from src.extensions import db
 
@@ -15,6 +16,8 @@ from src.services.payment_exceptions import (
 
 
 main_bp = Blueprint("main", __name__)
+
+logger = logging.getLogger(__name__)
 
 
 def _serialize_payment(payment: Payment) -> dict:
@@ -51,16 +54,22 @@ def start_payment(cart_id):
     try:
         payment_orm = create_payment_service().start_payment(cart_id, idempotency_key)
     except CartNotFoundError as exc:
+        logger.warning("start_payment failed for cart %s: %s", cart_id, exc)
         abort(404, description=str(exc))
     except CartNotActiveError as exc:
+        logger.warning("start_payment failed for cart %s: %s", cart_id, exc)
         abort(409, description=str(exc))
     except PaymentMethodNotFoundError as exc:
+        logger.warning("start_payment failed for cart %s: %s", cart_id, exc)
         abort(422, description=str(exc))
     except EmptyCartError as exc:
+        logger.warning("start_payment failed for cart %s: %s", cart_id, exc)
         abort(422, description=str(exc))
     except IdempotencyKeyConflictError as exc:
+        logger.warning("start_payment failed for cart %s: %s", cart_id, exc)
         abort(409, description=str(exc))
     except PaymentProviderError as exc:
+        logger.error("start_payment failed for cart %s: %s", cart_id, exc)
         abort(502, description=str(exc))
 
     payment = Payment.from_orm(payment_orm)

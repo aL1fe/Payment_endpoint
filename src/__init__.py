@@ -3,9 +3,11 @@ from werkzeug.exceptions import HTTPException
 from src.extensions import db, migrate
 
 from src.config import settings
+from src.logging_config import configure_logging
 
 
 def create_app():
+    configure_logging()
     app = Flask(__name__)
 
     app.config["SQLALCHEMY_DATABASE_URI"] = settings.SQLALCHEMY_DATABASE_URI

@@ -1,3 +1,4 @@
+import logging
 import uuid
 import time
 
@@ -17,6 +18,8 @@ from src.services.payment_exceptions import (
     PaymentProviderError,
     EmptyCartError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class PaymentService:
@@ -47,32 +50,41 @@ class PaymentService:
                 return self._payment_provider.charge(provider_token, amount)
             except Exception as exc:
                 last_error = exc
+                logger.warning("Charge attempt %s/%s failed: %s", attempt, self._max_charge_attempts, exc)
                 if attempt < self._max_charge_attempts:
                     time.sleep(self._retry_backoff_seconds * attempt)
         raise last_error
 
     def start_payment(self, cart_id: uuid.UUID, idempotency_key: str) -> PaymentORM:
+        logger.info("Starting payment for cart %s", cart_id)
+
         existing_payment = self._payments.get_by_idempotency_key(idempotency_key)
         if existing_payment is not None:
             if existing_payment.cart_id != cart_id:
+                logger.warning("Idempotency key conflict for cart %s", cart_id)
                 raise IdempotencyKeyConflictError(
                     f"Idempotency key {idempotency_key} was already used for a different cart"
                 )
             # Same key + same cart: return the original result instead of charging again.
+            logger.info("Idempotent replay for cart %s, returning payment %s", cart_id, existing_payment.id)
             return existing_payment
 
         cart = self._carts.get_by_id(cart_id, for_update=True)
         if cart is None:
+            logger.warning("Cart %s not found", cart_id)
             raise CartNotFoundError(f"Cart {cart_id} not found")
         if cart.status != "active":
+            logger.warning("Cart %s is %s, not active", cart_id, cart.status)
             raise CartNotActiveError(f"Cart {cart_id} is {cart.status}, not active")
 
         payment_method = self._payment_methods.get_default_for_user(cart.user_id)
         if payment_method is None:
+            logger.warning("No default payment method for user %s", cart.user_id)
             raise PaymentMethodNotFoundError(f"No default payment method for user {cart.user_id}")
 
         cart_items = self._carts.get_items(cart_id)
         if not cart_items:
+            logger.warning("Cart %s has no items", cart_id)
             raise EmptyCartError(f"Cart {cart_id} has no items")
         amount = calculate_cart_total(cart_items)
 
@@ -93,6 +105,7 @@ class PaymentService:
         except Exception as exc:
             payment.status = Status.FAILED
             db.session.commit()
+            logger.error("Payment %s failed after %s attempts: %s", payment.id, self._max_charge_attempts, exc)
             raise PaymentProviderError(f"Payment provider call failed: {exc}") from exc
 
         payment.status = Status.SUCCEEDED if result.success else Status.FAILED
@@ -101,6 +114,7 @@ class PaymentService:
             self._carts.mark_checked_out(cart)
 
         db.session.commit()
+        logger.info("Payment %s for cart %s finished with status %s", payment.id, cart_id, payment.status.value)
         return payment
 
 
