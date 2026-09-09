@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, abort
+from flask import Blueprint, jsonify, abort, request
 from src.extensions import db
 
 from src.models.payment import PaymentORM
@@ -7,6 +7,7 @@ from src.services.payment_service import (
     PaymentService,
     CartNotFoundError,
     PaymentMethodNotFoundError,
+    IdempotencyKeyConflictError,
 )
 
 
@@ -40,12 +41,18 @@ def get_payment(payment_id):
 
 @main_bp.route("/payments/<uuid:cart_id>", methods=["POST"])
 def start_payment(cart_id):
+    idempotency_key = request.headers.get("Idempotency-Key")
+    if not idempotency_key:
+        abort(400, description="Idempotency-Key header is required")
+
     try:
-        payment_orm = PaymentService().start_payment(cart_id)
+        payment_orm = PaymentService().start_payment(cart_id, idempotency_key)
     except CartNotFoundError as exc:
         abort(404, description=str(exc))
     except PaymentMethodNotFoundError as exc:
         abort(422, description=str(exc))
+    except IdempotencyKeyConflictError as exc:
+        abort(409, description=str(exc))
 
     payment = Payment.from_orm(payment_orm)
     return jsonify(_serialize_payment(payment)), 201

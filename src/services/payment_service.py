@@ -20,6 +20,11 @@ class PaymentMethodNotFoundError(Exception):
         super().__init__(message)
 
 
+class IdempotencyKeyConflictError(Exception):
+    def __init__(self, message="Idempotency key was already used for a different cart"):
+        super().__init__(message)
+
+
 class PaymentService:
     """Business logic for starting a payment for a cart."""
 
@@ -35,7 +40,16 @@ class PaymentService:
         self._payment_methods = payment_method_repository or UserPaymentMethodRepository()
         self._payment_provider = payment_provider or PaymentProvider()
 
-    def start_payment(self, cart_id: uuid.UUID) -> PaymentORM:
+    def start_payment(self, cart_id: uuid.UUID, idempotency_key: str) -> PaymentORM:
+        existing_payment = self._payments.get_by_idempotency_key(idempotency_key)
+        if existing_payment is not None:
+            if existing_payment.cart_id != cart_id:
+                raise IdempotencyKeyConflictError(
+                    f"Idempotency key {idempotency_key} was already used for a different cart"
+                )
+            # Same key + same cart: return the original result instead of charging again.
+            return existing_payment
+
         cart = self._carts.get_by_id(cart_id)
         if cart is None:
             raise CartNotFoundError(f"Cart {cart_id} not found")
@@ -54,7 +68,7 @@ class PaymentService:
                 amount=amount,
                 status=Status.PENDING,
                 provider_token=payment_method.provider_token,
-                idempotency_key=uuid.uuid4().hex,
+                idempotency_key=idempotency_key,
             )
         )
         db.session.flush()
