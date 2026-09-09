@@ -35,6 +35,11 @@ class PaymentProviderError(Exception):
         super().__init__(message)
 
 
+class EmptyCartError(Exception):
+    def __init__(self, message="Cart has no items"):
+        super().__init__(message)
+
+
 class PaymentService:
     """Business logic for starting a payment for a cart."""
 
@@ -71,6 +76,8 @@ class PaymentService:
             raise PaymentMethodNotFoundError(f"No default payment method for user {cart.user_id}")
 
         cart_items = self._carts.get_items(cart_id)
+        if not cart_items:
+            raise EmptyCartError(f"Cart {cart_id} has no items")
         amount = calculate_cart_total(cart_items)
 
         payment = self._payments.create(

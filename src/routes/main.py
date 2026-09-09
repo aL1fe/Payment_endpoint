@@ -10,6 +10,7 @@ from src.services.payment_service import (
     PaymentMethodNotFoundError,
     IdempotencyKeyConflictError,
     PaymentProviderError,
+    EmptyCartError,
 )
 
 
@@ -54,6 +55,8 @@ def start_payment(cart_id):
     except CartNotActiveError as exc:
         abort(409, description=str(exc))
     except PaymentMethodNotFoundError as exc:
+        abort(422, description=str(exc))
+    except EmptyCartError as exc:
         abort(422, description=str(exc))
     except IdempotencyKeyConflictError as exc:
         abort(409, description=str(exc))
