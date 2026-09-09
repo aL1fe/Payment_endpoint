@@ -46,7 +46,7 @@ def get_payment(payment_id):
     return jsonify(_serialize_payment(payment))
 
 
-@main_bp.route("/payments/<uuid:cart_id>", methods=["POST"])
+@main_bp.route("/carts/<cart_id>/payments", methods=["POST"])
 def start_payment(cart_id):
     idempotency_key = request.headers.get("Idempotency-Key")
     if not idempotency_key:

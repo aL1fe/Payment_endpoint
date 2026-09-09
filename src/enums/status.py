@@ -5,4 +5,3 @@ class Status(str, Enum):
     PENDING = "pending"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
-    REFUNDED = "refunded"
