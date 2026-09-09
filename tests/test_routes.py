@@ -105,13 +105,13 @@ class _FakeDb:
 def test_get_payment_not_found_returns_404(client, monkeypatch):
     from src.routes import main as main_module
     monkeypatch.setattr(main_module, "db", _FakeDb(None))
-    resp = client.get(f"/carts/{uuid.uuid4()}/payments")
+    resp = client.get(f"/payments/{uuid.uuid4()}")
     assert resp.status_code == 404
 
 
 def test_get_payment_found_returns_200(client, monkeypatch):
     from src.routes import main as main_module
     monkeypatch.setattr(main_module, "db", _FakeDb(_fake_payment_orm(status=Status.PENDING)))
-    resp = client.get(f"/carts/{uuid.uuid4()}/payments")
+    resp = client.get(f"/payments/{uuid.uuid4()}")
     assert resp.status_code == 200
     assert resp.get_json()["status"] == "pending"
